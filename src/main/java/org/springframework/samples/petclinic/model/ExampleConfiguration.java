@@ -16,7 +16,7 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 public final class ExampleConfiguration {
 
     // Name of the service
-    private static final String SERVICE_NAME = "myExampleService";
+    private static final String SERVICE_NAME = "myExampleService1";
 
     /**
      * Adds a SimpleSpanProcessor initialized with ZipkinSpanExporter to the
