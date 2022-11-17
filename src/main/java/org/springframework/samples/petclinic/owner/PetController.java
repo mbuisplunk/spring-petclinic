@@ -50,13 +50,8 @@ class PetController {
 
 	private final OwnerRepository owners;
 
-	private final Tracer tracer;
-
 	public PetController(OwnerRepository owners) {
 		this.owners = owners;
-
-		SdkTracerProvider tracerProvider = ExampleConfiguration.initializeOpenTelemetry();
-		tracer = tracerProvider.get("io.opentelemetry.example.ZipkinExample");
 	}
 
 	@ModelAttribute("types")
@@ -99,20 +94,7 @@ class PetController {
 			result.rejectValue("name", "duplicate", "already exists");
 		}
 
-		Span span = tracer.spanBuilder("Adding Pet Span").startSpan();
-
-		try (Scope scope = span.makeCurrent()) {
-			span.addEvent("Event 0 - addPet() begin");
-			owner.addPet(pet);
-			span.addEvent("Event 1 - addPet() complete");
-			span.setAttribute("pet_name", pet.getName());
-			span.setAttribute("pet_birthday", pet.getBirthDate().toString());
-			span.setAttribute("pet_type", pet.getType().toString());
-		}
-		finally {
-			span.end();
-		}
-
+		owner.addPet(pet);
 		if (result.hasErrors()) {
 			model.put("pet", pet);
 			return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
