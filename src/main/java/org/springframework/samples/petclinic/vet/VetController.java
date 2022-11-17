@@ -67,7 +67,9 @@ class VetController {
 		Vets vets = new Vets();
 
 		try {
+			parentSpan.addEvent("Event 0 - findPaginated() begin");
 			paginated = findPaginated(page, parentSpan);
+			parentSpan.addEvent("Event 1 - findPaginated() end");
 		} finally {
 			parentSpan.end();
 		}
@@ -94,7 +96,9 @@ class VetController {
 		Pageable pageable;
 
 		try {
+			childSpan.addEvent("Event 0 - PageRequest.of() begin");
 			pageable = PageRequest.of(page - 1, pageSize);
+			childSpan.addEvent("Event 1 - PageRequest.of() end");
 		} finally {
 			childSpan.end();
 		}
