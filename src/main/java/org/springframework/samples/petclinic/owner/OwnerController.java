@@ -86,12 +86,13 @@ class OwnerController {
             return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
         }
 
-		Span span = tracer.spanBuilder("Start my wonderful use case").startSpan();
+		Span span = tracer.spanBuilder("Adding Owner Span").startSpan();
 
         try (Scope scope = span.makeCurrent()) {
-            span.addEvent("Event 0");
+            span.addEvent("Event 0 - owners.save() begin");
             this.owners.save(owner);
-            span.addEvent("Event 1");
+            span.addEvent("Event 1 - owners.save() complete");
+			span.setAttribute("owner_id", owner.getId());
         }
         finally {
             span.end();
@@ -114,32 +115,35 @@ class OwnerController {
             owner.setLastName(""); // empty string signifies broadest possible search
         }
 
-		Span span = tracer.spanBuilder("Start my wonderful use case").startSpan();
+		Span span = tracer.spanBuilder("Finding Owner Span").startSpan();
 		Page<Owner> ownersResults;
 
         // find owners by last name
-		try (Scope scope = span.makeCurrent()) {
-            span.addEvent("Event 0");
-            ownersResults = findPaginatedForOwnersLastName(page, owner.getLastName());
-            span.addEvent("Event 1");
-        }
-        finally {
-            span.end();
-        }
+		span.makeCurrent();
+		span.addEvent("Event 0 - findPaginatdForOwnersLastName() begin");
+		ownersResults = findPaginatedForOwnersLastName(page, owner.getLastName());
+		span.addEvent("Event 1 - findPaginatdForOwnersLastName() complete");
+		span.setAttribute("owner_lastname", owner.getLastName());
 
         if (ownersResults.isEmpty()) {
             // no owners found
             result.rejectValue("lastName", "notFound", "not found");
+			span.setAttribute("owners_num", "0");
+			span.end();
             return "owners/findOwners";
         }
 
         if (ownersResults.getTotalElements() == 1) {
             // 1 owner found
             owner = ownersResults.iterator().next();
+			span.setAttribute("owners_num", "1");
+			span.end();
             return "redirect:/owners/" + owner.getId();
         }
 
         // multiple owners found
+		span.setAttribute("owners_num", "multiple");
+		span.end();
         return addPaginationModel(page, model, ownersResults);
     }
 

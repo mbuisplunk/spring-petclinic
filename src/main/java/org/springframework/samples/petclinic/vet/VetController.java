@@ -26,6 +26,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.TracerProvider;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import org.springframework.samples.petclinic.model.ExampleConfiguration;
+
 /**
  * @author Juergen Hoeller
  * @author Mark Fisher
@@ -37,19 +45,34 @@ class VetController {
 
 	private final VetRepository vetRepository;
 
+	private final Tracer tracer;
+
 	public VetController(VetRepository clinicService) {
 		this.vetRepository = clinicService;
+
+		OpenTelemetry openTelemetry = ExampleConfiguration.initializeOpenTelemetry();
+        TracerProvider tracerProvider = openTelemetry.getTracerProvider();
+        tracer = tracerProvider.get("io.opentelemetry.example.ZipkinExample");
 	}
 
 	@GetMapping("/vets.html")
 	public String showVetList(@RequestParam(defaultValue = "1") int page, Model model) {
 		// Here we are returning an object of type 'Vets' rather than a collection of Vet
 		// objects so it is simpler for Object-Xml mapping
+
+		Span parentSpan = tracer.spanBuilder("Show Vet List Parent").startSpan();
+
+		Page<Vet> paginated;
 		Vets vets = new Vets();
-		Page<Vet> paginated = findPaginated(page);
+
+		try {
+			paginated = findPaginated(page, parentSpan);
+		} finally {
+			parentSpan.end();
+		}
+
 		vets.getVetList().addAll(paginated.toList());
 		return addPaginationModel(page, paginated, model);
-
 	}
 
 	private String addPaginationModel(int page, Page<Vet> paginated, Model model) {
@@ -61,9 +84,20 @@ class VetController {
 		return "vets/vetList";
 	}
 
-	private Page<Vet> findPaginated(int page) {
+	private Page<Vet> findPaginated(int page, Span parentSpan) {
+		Span childSpan = tracer.spanBuilder("Show Vet List Child")
+        .setParent(Context.current().with(parentSpan))
+        .startSpan();
+
 		int pageSize = 5;
-		Pageable pageable = PageRequest.of(page - 1, pageSize);
+		Pageable pageable;
+
+		try {
+			pageable = PageRequest.of(page - 1, pageSize);
+		} finally {
+			childSpan.end();
+		}
+	
 		return vetRepository.findAll(pageable);
 	}
 

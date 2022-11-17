@@ -29,6 +29,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.TracerProvider;
+import io.opentelemetry.context.Scope;
+import org.springframework.samples.petclinic.model.ExampleConfiguration;
+
 /**
  * @author Juergen Hoeller
  * @author Ken Krebs
@@ -42,8 +49,14 @@ class PetController {
 
 	private final OwnerRepository owners;
 
+	private final Tracer tracer;
+
 	public PetController(OwnerRepository owners) {
 		this.owners = owners;
+
+		OpenTelemetry openTelemetry = ExampleConfiguration.initializeOpenTelemetry();
+        TracerProvider tracerProvider = openTelemetry.getTracerProvider();
+        tracer = tracerProvider.get("io.opentelemetry.example.ZipkinExample");
 	}
 
 	@ModelAttribute("types")
@@ -86,7 +99,20 @@ class PetController {
 			result.rejectValue("name", "duplicate", "already exists");
 		}
 
+		Span span = tracer.spanBuilder("Adding Pet Span").startSpan();
+
 		owner.addPet(pet);
+
+		try (Scope scope = span.makeCurrent()) {
+            span.addEvent("Event 0 - addPet() begin");
+            owner.addPet(pet);
+            span.addEvent("Event 1 - addPet() complete");
+			span.setAttribute("pet_name", pet.getName());
+        }
+        finally {
+            span.end();
+        }
+
 		if (result.hasErrors()) {
 			model.put("pet", pet);
 			return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
