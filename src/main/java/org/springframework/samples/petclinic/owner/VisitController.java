@@ -28,6 +28,15 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.trace.TracerProvider;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import org.springframework.samples.petclinic.model.ExampleConfiguration;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+
 /**
  * @author Juergen Hoeller
  * @author Ken Krebs
@@ -40,8 +49,14 @@ class VisitController {
 
 	private final OwnerRepository owners;
 
+	private final Tracer tracer;
+
 	public VisitController(OwnerRepository owners) {
 		this.owners = owners;
+
+		SdkTracerProvider tracerProvider = ExampleConfiguration.initializeOpenTelemetry();
+		// TracerProvider tracerProvider = openTelemetry.getTracerProvider();
+		tracer = tracerProvider.get("io.opentelemetry.example.ZipkinExample");
 	}
 
 	@InitBinder
@@ -86,7 +101,19 @@ class VisitController {
 			return "pets/createOrUpdateVisitForm";
 		}
 
-		owner.addVisit(petId, visit);
+		Span span = tracer.spanBuilder("Adding Owner Visit").startSpan();
+
+		try (Scope scope = span.makeCurrent()) {
+			span.addEvent("Event 0 - addVisit() begin");
+			owner.addVisit(petId, visit);
+			span.addEvent("Event 1 - addVisit() complete");
+			span.setAttribute("pet_id", petId);
+			span.setAttribute("visit_date", visit.getDate().toString());
+		}
+		finally {
+			span.end();
+		}
+
 		this.owners.save(owner);
 		return "redirect:/owners/{ownerId}";
 	}

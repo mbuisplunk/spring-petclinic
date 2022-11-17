@@ -56,7 +56,6 @@ class PetController {
 		this.owners = owners;
 
 		SdkTracerProvider tracerProvider = ExampleConfiguration.initializeOpenTelemetry();
-		// TracerProvider tracerProvider = openTelemetry.getTracerProvider();
 		tracer = tracerProvider.get("io.opentelemetry.example.ZipkinExample");
 	}
 
@@ -102,13 +101,13 @@ class PetController {
 
 		Span span = tracer.spanBuilder("Adding Pet Span").startSpan();
 
-		owner.addPet(pet);
-
 		try (Scope scope = span.makeCurrent()) {
 			span.addEvent("Event 0 - addPet() begin");
 			owner.addPet(pet);
 			span.addEvent("Event 1 - addPet() complete");
 			span.setAttribute("pet_name", pet.getName());
+			span.setAttribute("pet_birthday", pet.getBirthDate().toString());
+			span.setAttribute("pet_type", pet.getType().toString());
 		}
 		finally {
 			span.end();
