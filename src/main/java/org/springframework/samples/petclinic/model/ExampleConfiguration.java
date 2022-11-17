@@ -16,13 +16,13 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 public final class ExampleConfiguration {
 
     // Name of the service
-    private static final String SERVICE_NAME = "myExampleService1";
+    private static final String SERVICE_NAME = "myExampleService";
 
     /**
      * Adds a SimpleSpanProcessor initialized with ZipkinSpanExporter to the
      * TracerSdkProvider
      */
-    public static OpenTelemetry initializeOpenTelemetry() {
+    public static SdkTracerProvider initializeOpenTelemetry() {
         String endpoint = String.format("http://%s:%s/api/v2/spans", "localhost", 9411);
         ZipkinSpanExporter zipkinExporter = ZipkinSpanExporter.builder().setEndpoint(endpoint).build();
 
@@ -32,14 +32,14 @@ public final class ExampleConfiguration {
         SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
                 .addSpanProcessor(SimpleSpanProcessor.create(zipkinExporter))
                 .setResource(Resource.getDefault().merge(serviceNameResource)).build();
-        OpenTelemetrySdk openTelemetry = OpenTelemetrySdk.builder().setTracerProvider(tracerProvider)
-                .buildAndRegisterGlobal();
+        // OpenTelemetrySdk openTelemetry = OpenTelemetrySdk.builder().setTracerProvider(tracerProvider)
+        //         .buildAndRegisterGlobal();
 
         // add a shutdown hook to shut down the SDK
         Runtime.getRuntime().addShutdownHook(new Thread(tracerProvider::close));
 
         // return the configured instance so it can be used for instrumentation.
-        return openTelemetry;
+        return tracerProvider;
     }
 
 }

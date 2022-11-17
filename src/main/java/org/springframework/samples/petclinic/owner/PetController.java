@@ -35,6 +35,7 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.TracerProvider;
 import io.opentelemetry.context.Scope;
 import org.springframework.samples.petclinic.model.ExampleConfiguration;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
 
 /**
  * @author Juergen Hoeller
@@ -54,8 +55,8 @@ class PetController {
 	public PetController(OwnerRepository owners) {
 		this.owners = owners;
 
-		OpenTelemetry openTelemetry = ExampleConfiguration.initializeOpenTelemetry();
-        TracerProvider tracerProvider = openTelemetry.getTracerProvider();
+        SdkTracerProvider tracerProvider = ExampleConfiguration.initializeOpenTelemetry();
+        // TracerProvider tracerProvider = openTelemetry.getTracerProvider();
         tracer = tracerProvider.get("io.opentelemetry.example.ZipkinExample");
 	}
 
