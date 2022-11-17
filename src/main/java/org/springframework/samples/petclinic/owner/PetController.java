@@ -55,9 +55,9 @@ class PetController {
 	public PetController(OwnerRepository owners) {
 		this.owners = owners;
 
-        SdkTracerProvider tracerProvider = ExampleConfiguration.initializeOpenTelemetry();
-        // TracerProvider tracerProvider = openTelemetry.getTracerProvider();
-        tracer = tracerProvider.get("io.opentelemetry.example.ZipkinExample");
+		SdkTracerProvider tracerProvider = ExampleConfiguration.initializeOpenTelemetry();
+		// TracerProvider tracerProvider = openTelemetry.getTracerProvider();
+		tracer = tracerProvider.get("io.opentelemetry.example.ZipkinExample");
 	}
 
 	@ModelAttribute("types")
@@ -105,14 +105,14 @@ class PetController {
 		owner.addPet(pet);
 
 		try (Scope scope = span.makeCurrent()) {
-            span.addEvent("Event 0 - addPet() begin");
-            owner.addPet(pet);
-            span.addEvent("Event 1 - addPet() complete");
+			span.addEvent("Event 0 - addPet() begin");
+			owner.addPet(pet);
+			span.addEvent("Event 1 - addPet() complete");
 			span.setAttribute("pet_name", pet.getName());
-        }
-        finally {
-            span.end();
-        }
+		}
+		finally {
+			span.end();
+		}
 
 		if (result.hasErrors()) {
 			model.put("pet", pet);

@@ -51,9 +51,9 @@ class VetController {
 	public VetController(VetRepository clinicService) {
 		this.vetRepository = clinicService;
 
-        SdkTracerProvider tracerProvider = ExampleConfiguration.initializeOpenTelemetry();
-        // TracerProvider tracerProvider = openTelemetry.getTracerProvider();
-        tracer = tracerProvider.get("io.opentelemetry.example.ZipkinExample");
+		SdkTracerProvider tracerProvider = ExampleConfiguration.initializeOpenTelemetry();
+		// TracerProvider tracerProvider = openTelemetry.getTracerProvider();
+		tracer = tracerProvider.get("io.opentelemetry.example.ZipkinExample");
 	}
 
 	@GetMapping("/vets.html")
@@ -70,7 +70,8 @@ class VetController {
 			parentSpan.addEvent("Event 0 - findPaginated() begin");
 			paginated = findPaginated(page, parentSpan);
 			parentSpan.addEvent("Event 1 - findPaginated() end");
-		} finally {
+		}
+		finally {
 			parentSpan.end();
 		}
 
@@ -88,9 +89,8 @@ class VetController {
 	}
 
 	private Page<Vet> findPaginated(int page, Span parentSpan) {
-		Span childSpan = tracer.spanBuilder("Show Vet List Child")
-        .setParent(Context.current().with(parentSpan))
-        .startSpan();
+		Span childSpan = tracer.spanBuilder("Show Vet List Child").setParent(Context.current().with(parentSpan))
+				.startSpan();
 
 		int pageSize = 5;
 		Pageable pageable;
@@ -99,10 +99,11 @@ class VetController {
 			childSpan.addEvent("Event 0 - PageRequest.of() begin");
 			pageable = PageRequest.of(page - 1, pageSize);
 			childSpan.addEvent("Event 1 - PageRequest.of() end");
-		} finally {
+		}
+		finally {
 			childSpan.end();
 		}
-	
+
 		return vetRepository.findAll(pageable);
 	}
 
