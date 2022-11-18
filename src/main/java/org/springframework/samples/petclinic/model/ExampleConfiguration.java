@@ -15,14 +15,13 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
  */
 public final class ExampleConfiguration {
 
-	// Name of the service
-	private static final String SERVICE_NAME = "myExampleService";
-
 	/**
 	 * Adds a SimpleSpanProcessor initialized with ZipkinSpanExporter to the
 	 * TracerSdkProvider
 	 */
 	public static SdkTracerProvider initializeOpenTelemetry() {
+		String SERVICE_NAME = System.getenv("SERVICE_NAME");
+
 		String endpoint = String.format("http://%s:%s/api/v2/spans", "localhost", 9411);
 		ZipkinSpanExporter zipkinExporter = ZipkinSpanExporter.builder().setEndpoint(endpoint).build();
 
